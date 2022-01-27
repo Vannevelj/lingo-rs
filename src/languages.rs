@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-#[derive(Debug, Hash, PartialEq, Eq)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub struct Language {
     pub extensions: Vec<String>,
     pub name: String,
@@ -15,8 +15,10 @@ impl Language {
     }
 }
 
-const TYPESCRIPT: Language = Language::new("Typescript", vec!["ts", "tsx"]);
-const JAVASCRIPT: Language = Language::new("Javascript", vec!["js", "jsx"]);
-const JSON: Language = Language::new("JSON", vec!["json"]);
+pub fn get_extensions() -> Vec<Language> {
+    let typescript = Language::new("Typescript", vec!["ts", "tsx"]);
+    let javascript: Language = Language::new("Javascript", vec!["js", "jsx"]);
+    let json: Language = Language::new("JSON", vec!["json"]);
 
-pub const LANGUAGES: Vec<Language> = vec![TYPESCRIPT, JAVASCRIPT, JSON];
+    vec![typescript, javascript, json]
+}
