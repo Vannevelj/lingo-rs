@@ -42,20 +42,9 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
 
     info!("Creating {} series", data.len());
 
-    chart
-        .configure_series_labels()
-        .border_style(&BLACK)
-        .background_style(&CYAN.mix(0.8))
-        .draw()
-        .expect("Failed to render labels");
-
     for (index, (language, values)) in data.iter().enumerate() {
         info!("{:?}", values);
         let color = get_color(index);
-
-        for value in values {
-            println!("Date: {:?}", value.0);
-        }
 
         chart
             .draw_series(LineSeries::new(
@@ -73,6 +62,13 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
             })
             .label(&language.name);
     }
+
+    chart
+        .configure_series_labels()
+        .border_style(&BLACK)
+        .background_style(&CYAN.mix(0.8))
+        .draw()
+        .expect("Failed to render labels");
 }
 
 fn get_color(index: usize) -> RGBColor {
