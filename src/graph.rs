@@ -1,0 +1,81 @@
+use chrono::{Datelike, TimeZone, Utc};
+use directories::UserDirs;
+use log::info;
+use plotters::{
+    prelude::{
+        BitMapBackend, ChartBuilder, IntoDrawingArea, IntoMonthly, LabelAreaPosition, LineSeries,
+        PathElement,
+    },
+    style::{Color, IntoFont, RGBColor, BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, WHITE, YELLOW},
+};
+
+use crate::ChronologicalLookup;
+
+pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
+    info!("Creating graph");
+    let output_file = UserDirs::new()
+        .expect("Could not find a HOME directory")
+        .desktop_dir()
+        .expect("No Desktop directory found")
+        .join("out.png");
+
+    let root = BitMapBackend::new(&output_file, (800, 640)).into_drawing_area();
+    root.fill(&WHITE).expect("Failed to set chart background");
+
+    let mut chart = ChartBuilder::on(&root)
+        .caption(chart_name, ("sans-serif", 40).into_font())
+        .set_label_area_size(LabelAreaPosition::Left, 60)
+        .set_label_area_size(LabelAreaPosition::Bottom, 60)
+        .build_cartesian_2d(
+            (Utc.ymd(2021, 11, 1)..Utc.ymd(2022, 2, 1)).monthly(),
+            0.0f64..100.0f64,
+        )
+        .expect("Failed to set chart axis");
+
+    chart
+        .configure_mesh()
+        .disable_x_mesh()
+        .disable_y_mesh()
+        .y_label_formatter(&|x| format!("{:.2}%", x))
+        .draw()
+        .expect("Failed to render mesh");
+
+    info!("Creating {} series", data.len());
+
+    chart
+        .configure_series_labels()
+        .border_style(&BLACK)
+        .background_style(&CYAN.mix(0.8))
+        .draw()
+        .expect("Failed to render labels");
+
+    for (index, (language, values)) in data.iter().enumerate() {
+        info!("{:?}", values);
+        let color = get_color(index);
+
+        for value in values {
+            println!("Date: {:?}", value.0);
+        }
+
+        chart
+            .draw_series(LineSeries::new(
+                values
+                    .iter()
+                    .map(|(date, pct)| (Utc.ymd(date.year(), date.month(), date.day()), *pct)),
+                color,
+            ))
+            .expect("Failed to draw series")
+            .legend(|(x, y)| {
+                PathElement::new(
+                    vec![(x, y), (x + 20, y)],
+                    RGBColor(x as u8, x as u8, x as u8),
+                )
+            })
+            .label(&language.name);
+    }
+}
+
+fn get_color(index: usize) -> RGBColor {
+    let colors = vec![RED, BLUE, BLACK, GREEN, YELLOW, CYAN, MAGENTA];
+    colors[index % colors.len()]
+}
