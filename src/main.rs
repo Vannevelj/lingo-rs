@@ -110,7 +110,6 @@ fn is_binary_file(path: &PathBuf) -> bool {
     match file {
         Ok(mut file) => {
             let mut buffer = [0u8; 8000];
-            buffer.fill(0);
             match file.read(&mut buffer) {
                 Ok(num_bytes) => buffer[..num_bytes].contains(&b'\x00'),
                 Err(e) => {
