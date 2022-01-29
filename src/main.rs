@@ -1,10 +1,10 @@
-use chrono::{Duration, NaiveDate, NaiveDateTime, TimeZone, Utc, Datelike};
+use chrono::{Datelike, Duration, NaiveDate, NaiveDateTime, TimeZone, Utc};
 use directories::UserDirs;
 use languages::{get_extensions, Language};
 use lazy_static::lazy_static;
 use log::{debug, error, info};
 use plotters::{
-    prelude::{BitMapBackend, ChartBuilder, IntoDrawingArea, IntoMonthly, LineSeries},
+    prelude::{BitMapBackend, ChartBuilder, IntoDrawingArea, IntoMonthly, LineSeries, PathElement},
     style::{IntoFont, RED, WHITE},
 };
 use std::{
@@ -48,19 +48,19 @@ fn main() {
         end = NaiveDate::parse_from_str(d.as_str(), date_format).expect("Failed to parse end date");
     }
 
-    // while start < end {
-    //     info!("Evaluating {}", start);
-    //     checkout_date(&start, &args.branch, &args.path);
+    while start < end {
+        info!("Evaluating {}", start);
+        checkout_date(&start, &args.branch, &args.path);
 
-    //     let mut usage_by_type: LanguageLookup = HashMap::new();
+        let mut usage_by_type: LanguageLookup = HashMap::new();
 
-    //     traverse_path(&args.path, &mut usage_by_type);
-    //     distribution_by_date.insert(start, usage_by_type);
+        traverse_path(&args.path, &mut usage_by_type);
+        distribution_by_date.insert(start, usage_by_type);
 
-    //     start = start.add(Duration::days(1));
-    // }
+        start = start.add(Duration::days(1));
+    }
 
-    // reset_repo(&args.branch, &args.path);
+    reset_repo(&args.branch, &args.path);
 
     let mapped_data = rollup_data(distribution_by_date);
     create_graph(&mapped_data, args.name);
@@ -203,6 +203,7 @@ fn reset_repo(branch: &String, path: &PathBuf) {
 
 fn rollup_data(data: DistributionLookup) -> ChronologicalLookup {
     let mut language_map: ChronologicalLookup = HashMap::new();
+
     for (date, values) in data {
         let total_bytes: u64 = values.values().sum();
         for (language, count) in values {
@@ -222,6 +223,7 @@ fn rollup_data(data: DistributionLookup) -> ChronologicalLookup {
 }
 
 fn create_graph(data: &ChronologicalLookup, chart_name: String) {
+    info!("Creating graph");
     let output_file = UserDirs::new()
         .expect("Could not find a HOME directory")
         .desktop_dir()
@@ -236,7 +238,7 @@ fn create_graph(data: &ChronologicalLookup, chart_name: String) {
         .x_label_area_size(20f32)
         .y_label_area_size(40f32)
         .build_cartesian_2d(
-            (Utc.ymd(2010, 1, 1)..Utc.ymd(2018, 12, 1)).monthly(),
+            (Utc.ymd(2020, 1, 1)..Utc.ymd(2022, 2, 1)).monthly(),
             0.0f64..100.0f64,
         )
         .expect("Failed to set chart axis");
@@ -249,12 +251,24 @@ fn create_graph(data: &ChronologicalLookup, chart_name: String) {
         .draw()
         .expect("Failed to render mesh");
 
+    info!("Creating {} series", data.len());
+
+    chart
+        .configure_series_labels()
+        .draw()
+        .expect("Failed to render labels");
+
     for (language, values) in data {
+        info!("{:?}", values);
         chart
             .draw_series(LineSeries::new(
-                values.iter().map(|(date, pct)| (Utc.ymd(date.year(), date.month(), date.day()), *pct)),
+                values
+                    .iter()
+                    .map(|(date, pct)| (Utc.ymd(date.year(), date.month(), date.day()), *pct)),
                 &RED,
             ))
-            .expect("Failed to draw series");
+            .expect("Failed to draw series")
+            .label(&language.name)
+            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
     }
 }
