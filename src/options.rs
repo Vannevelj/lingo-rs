@@ -20,5 +20,5 @@ pub struct Options {
 
     /// The name of the repository
     #[structopt(short, long)]
-    pub name: String
+    pub name: String,
 }

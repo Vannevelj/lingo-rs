@@ -1,12 +1,10 @@
-use chrono::{Duration, NaiveDate, Utc};
+use chrono::{Duration, NaiveDate, NaiveDateTime, Utc};
 use directories::UserDirs;
 use languages::{get_extensions, Language};
 use lazy_static::lazy_static;
 use log::{debug, error, info};
 use plotters::{
-    prelude::{
-        BitMapBackend, ChartBuilder, IntoDrawingArea, LineSeries,
-    },
+    prelude::{BitMapBackend, ChartBuilder, IntoDrawingArea, LineSeries},
     style::{IntoFont, RED, WHITE},
 };
 use std::{
@@ -27,6 +25,7 @@ use crate::options::Options;
 
 type LanguageLookup = HashMap<Language, u64>;
 type DistributionLookup = HashMap<NaiveDate, LanguageLookup>;
+type ChronologicalLookup = HashMap<Language, HashMap<NaiveDate, f64>>;
 
 lazy_static! {
     static ref EXTENSIONS: Vec<Language> = get_extensions();
@@ -62,7 +61,9 @@ fn main() {
     // }
 
     // reset_repo(&args.branch, &args.path);
-    create_graph(&distribution_by_date, args.name);
+
+    let mapped_data = rollup_data(distribution_by_date);
+    create_graph(&mapped_data, args.name);
 }
 
 fn traverse_path(path: &PathBuf, lookup: &mut LanguageLookup) -> Option<()> {
@@ -200,7 +201,27 @@ fn reset_repo(branch: &String, path: &PathBuf) {
 //     );
 // }
 
-fn create_graph(data: &DistributionLookup, chart_name: String) {
+fn rollup_data(data: DistributionLookup) -> ChronologicalLookup {
+    let mut language_map: ChronologicalLookup = HashMap::new();
+    for (date, values) in data {
+        let total_bytes: u64 = values.values().sum();
+        for (language, count) in values {
+            let percentage = count as f64 / total_bytes as f64 * 100f64;
+
+            if let Some(language_map_entry) = language_map.get_mut(&language) {
+                language_map_entry.insert(date, percentage);
+            } else {
+                let new_language_map: HashMap<NaiveDate, f64> = HashMap::new();
+                new_language_map.insert(date, percentage);
+                language_map.insert(language, new_language_map);
+            }
+        }
+    }
+
+    language_map
+}
+
+fn create_graph(data: &ChronologicalLookup, chart_name: String) {
     let output_file = UserDirs::new()
         .expect("Could not find a HOME directory")
         .desktop_dir()
@@ -223,10 +244,13 @@ fn create_graph(data: &DistributionLookup, chart_name: String) {
         .draw()
         .expect("Failed to render mesh");
 
-    chart
-        .draw_series(LineSeries::new(
-            vec![(0.0, 0.0), (5.0, 5.0), (8.0, 7.0)],
-            &RED,
-        ))
-        .expect("Failed to draw series");
+    for (date, values) in data {
+        let data = v
+        chart
+            .draw_series(LineSeries::new(
+                vec![(0.0, 0.0), (5.0, 5.0), (8.0, 7.0)],
+                &RED,
+            ))
+            .expect("Failed to draw series");
+    }
 }
