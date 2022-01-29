@@ -1,4 +1,4 @@
-use chrono::{Datelike, TimeZone, Utc};
+use chrono::{Datelike, NaiveDate, TimeZone, Utc};
 use directories::UserDirs;
 use log::info;
 use plotters::{
@@ -22,12 +22,15 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
     let root = BitMapBackend::new(&output_file, (800, 640)).into_drawing_area();
     root.fill(&WHITE).expect("Failed to set chart background");
 
+    let start_date = get_min_date(data).expect("No start date found");
+    let end_date = get_max_date(data).expect("No end date found");
+
     let mut chart = ChartBuilder::on(&root)
         .caption(chart_name, ("sans-serif", 40).into_font())
         .set_label_area_size(LabelAreaPosition::Left, 60)
         .set_label_area_size(LabelAreaPosition::Bottom, 60)
         .build_cartesian_2d(
-            (Utc.ymd(2021, 11, 1)..Utc.ymd(2022, 2, 1)).monthly(),
+            (Utc.from_utc_date(start_date)..Utc.from_utc_date(end_date)).monthly(),
             0.0f64..100.0f64,
         )
         .expect("Failed to set chart axis");
@@ -74,4 +77,12 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
 fn get_color(index: usize) -> RGBColor {
     let colors = vec![RED, BLUE, BLACK, GREEN, YELLOW, CYAN, MAGENTA];
     colors[index % colors.len()]
+}
+
+fn get_min_date(data: &ChronologicalLookup) -> Option<&NaiveDate> {
+    data.values().flat_map(|btree| btree.keys()).min()
+}
+
+fn get_max_date(data: &ChronologicalLookup) -> Option<&NaiveDate> {
+    data.values().flat_map(|btree| btree.keys()).max()
 }
