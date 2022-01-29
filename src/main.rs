@@ -54,7 +54,7 @@ fn main() {
         start = start.add(Duration::days(1));
     }
 
-    remove_branch();
+    reset_repo(&args.branch, &args.path);
 
     // let total_bytes: u64 = usage_by_type.values().sum();
 
@@ -161,23 +161,6 @@ fn is_binary_file(path: &PathBuf) -> bool {
 }
 
 fn checkout_date(date: &NaiveDate, branch: &String, path: &PathBuf) {
-    // git checkout `git rev-list -1 --before "$startdate" "$branch"`
-    // let rev_list_command = &format!("git rev-list -1 --before \"{}\" \"{}\"", date.format("%Y-%m-%d"), branch);
-
-    println!(
-        "{:?}",
-        Command::new("git")
-            .args([
-                "rev-list",
-                "-1",
-                "--before",
-                date.format("%Y-%m-%d").to_string().as_str(),
-                branch,
-            ])
-            .current_dir(&path)
-            .get_args()
-    );
-
     let output = Command::new("git")
         .args([
             "rev-list",
@@ -191,8 +174,10 @@ fn checkout_date(date: &NaiveDate, branch: &String, path: &PathBuf) {
         .output()
         .expect("Failed to get rev-list");
 
-    let commit_hash = str::from_utf8(&output.stdout).expect("Failed to parse commit hash").trim();
-    info!("Commit hash: {}", commit_hash);
+    let commit_hash = str::from_utf8(&output.stdout)
+        .expect("Failed to parse commit hash")
+        .trim();
+    debug!("Commit hash: {}", commit_hash);
 
     Command::new("git")
         .args(["checkout", commit_hash])
@@ -201,9 +186,10 @@ fn checkout_date(date: &NaiveDate, branch: &String, path: &PathBuf) {
         .expect("Failed to checkout date");
 }
 
-fn remove_branch() {
+fn reset_repo(branch: &String, path: &PathBuf) {
     Command::new("git")
-        .args(&["branch", "-D", "lingo-rs"])
+        .args(["checkout", branch])
+        .current_dir(path)
         .spawn()
-        .expect("Failed to clean up branch date");
+        .expect("Failed to reset repository");
 }
