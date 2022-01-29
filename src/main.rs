@@ -24,29 +24,38 @@ fn main() {
     let args = Options::from_args();
     
     let mut usage_by_type: LanguageLookup = HashMap::new();
-    traverse_path(&args.path, &mut usage_by_type);
+    println!("Starting now at {:?}", &args.path);
+    traverse_path(&args.path, &mut usage_by_type, 0);
 
-    // calculate percentages of total
+    let total_bytes: u64 = usage_by_type.values().sum();
+
+    for (language, count) in usage_by_type {
+        println!("{}: {:.2}%", language.name, count as f64 / total_bytes as f64 * 100f64);
+    }
+
     // create graph
 }
 
-fn traverse_path(path: &PathBuf, lookup: &mut LanguageLookup) -> Option<()> {
+fn traverse_path(path: &PathBuf, lookup: &mut LanguageLookup, depth: u8) -> Option<()> {
     let metadata = fs::metadata(path).ok()?;
+    println!("Inspecting {:?}", &path);
     if metadata.is_file() {
         let filesize = metadata.len();
         if let Some(language) = extract_filetype(&path) {
             let total = lookup.entry(language).or_insert(0);
             *total += filesize;
         }
-    }
-
-    for entry in fs::read_dir(path).ok()? {
-        if let Ok(directory) = entry {
-            traverse_path(&directory.path(), lookup);
+    } else {
+        if !should_skip_path(&path, depth) {
+            for entry in fs::read_dir(path).ok()? {
+                if let Ok(directory) = entry {
+                    traverse_path(&directory.path(), lookup, depth + 1);
+                }
+            }
         }
     }
 
-    return traverse_path(path, lookup)
+    return None;
 }
 
 fn extract_filetype(path: &PathBuf) -> Option<Language> {
@@ -57,4 +66,15 @@ fn extract_filetype(path: &PathBuf) -> Option<Language> {
     }
 
     None
+}
+
+fn should_skip_path(path: &PathBuf, depth: u8) -> bool {
+    let to_skip = vec!["node_modules", "build", "target", "bin", "obj"];
+    if depth <= 2 {
+        if let Some(path) = path.as_os_str().to_str() {
+            return to_skip.iter().any(|pattern| path.contains(pattern))
+        }
+    } 
+
+    return false
 }

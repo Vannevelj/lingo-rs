@@ -9,7 +9,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceRoot}/target/debug/lingo-rs.exe",
-            "args": [],
+            "args": ["C:/source/replay-mobile"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
