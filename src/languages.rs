@@ -53,6 +53,6 @@ pub fn get_extensions() -> Vec<Language> {
         html,
         css,
         sql,
-        cucumber
+        cucumber,
     ]
 }

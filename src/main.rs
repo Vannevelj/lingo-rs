@@ -1,3 +1,4 @@
+use chrono::{Duration, NaiveDate, Utc};
 use languages::{get_extensions, Language};
 use lazy_static::lazy_static;
 use log::{debug, error, info};
@@ -5,6 +6,7 @@ use std::{
     collections::HashMap,
     fs::{self, File},
     io::Read,
+    ops::Add,
     path::{PathBuf, MAIN_SEPARATOR},
 };
 use structopt::StructOpt;
@@ -16,6 +18,7 @@ mod options;
 use crate::options::Options;
 
 type LanguageLookup = HashMap<Language, u64>;
+type DistributionLookup = HashMap<NaiveDate, LanguageLookup>;
 
 lazy_static! {
     static ref EXTENSIONS: Vec<Language> = get_extensions();
@@ -27,20 +30,35 @@ fn main() {
     );
 
     let args = Options::from_args();
-
-    let mut usage_by_type: LanguageLookup = HashMap::new();
     println!("Starting now at {:?}", &args.path);
-    traverse_path(&args.path, &mut usage_by_type);
 
-    let total_bytes: u64 = usage_by_type.values().sum();
-
-    for (language, count) in usage_by_type {
-        println!(
-            "{}: {:.2}%",
-            language.name,
-            count as f64 / total_bytes as f64 * 100f64
-        );
+    let mut distribution_by_date: DistributionLookup = HashMap::new();
+    let date_format = "%Y-%m-%d";
+    let mut start = NaiveDate::parse_from_str(args.start.as_str(), date_format)
+        .expect("Invalid start date provided");
+    let mut end: NaiveDate = Utc::now().naive_utc().date();
+    if let Some(d) = args.end {
+        end = NaiveDate::parse_from_str(d.as_str(), date_format).expect("Failed to parse end date");
     }
+
+    while start < end {
+        let mut usage_by_type: LanguageLookup = HashMap::new();
+
+        traverse_path(&args.path, &mut usage_by_type);
+        distribution_by_date.insert(start, usage_by_type);
+
+        start = start.add(Duration::days(1));
+    }
+
+    // let total_bytes: u64 = usage_by_type.values().sum();
+
+    // for (language, count) in usage_by_type {
+    //     println!(
+    //         "{}: {:.2}%",
+    //         language.name,
+    //         count as f64 / total_bytes as f64 * 100f64
+    //     );
+    // }
 
     // create graph
 }
