@@ -7,7 +7,9 @@ use std::{
     fs::{self, File},
     io::Read,
     ops::Add,
-    path::{PathBuf, MAIN_SEPARATOR}, process::Command,
+    path::{PathBuf, MAIN_SEPARATOR},
+    process::{Command, Stdio},
+    str,
 };
 use structopt::StructOpt;
 
@@ -43,7 +45,7 @@ fn main() {
 
     while start < end {
         info!("Evaluating {}", start);
-        checkout_date(&start, &args.branch);
+        checkout_date(&start, &args.branch, &args.path);
 
         let mut usage_by_type: LanguageLookup = HashMap::new();
 
@@ -52,6 +54,8 @@ fn main() {
 
         start = start.add(Duration::days(1));
     }
+
+    remove_branch();
 
     // let total_bytes: u64 = usage_by_type.values().sum();
 
@@ -157,8 +161,49 @@ fn is_binary_file(path: &PathBuf) -> bool {
     }
 }
 
-fn checkout_date(date: &NaiveDate, branch: &String) {
+fn checkout_date(date: &NaiveDate, branch: &String, path: &PathBuf) {
     // git checkout `git rev-list -1 --before "$startdate" "$branch"`
-    let rev_list_command = &format!("`git rev-list -1 --before \"{}\" \"{}\"`", date.format("%Y-%m-%d"), branch);
-    Command::new("git").args(&["checkout", rev_list_command]).spawn().expect("Failed to checkout date");
+    // let rev_list_command = &format!("git rev-list -1 --before \"{}\" \"{}\"", date.format("%Y-%m-%d"), branch);
+
+    println!(
+        "{:?}",
+        Command::new("git")
+            .args([
+                "rev-list",
+                "-1",
+                "--before",
+                date.format("%Y-%m-%d").to_string().as_str(),
+                branch,
+            ])
+            .current_dir(&path)
+            .get_args()
+    );
+
+    let output = Command::new("git")
+        .args([
+            "rev-list",
+            "-1",
+            "--before",
+            date.format("%Y-%m-%d").to_string().as_str(),
+            branch,
+        ])
+        .stdout(Stdio::piped())
+        .current_dir(&path)
+        .output()
+        .expect("Failed to get rev-list");
+
+    let commit_hash = str::from_utf8(&output.stdout).expect("Failed to parse commit hash");
+    info!("Commit hash: {}", commit_hash);
+
+    Command::new("git")
+        .args(&["checkout", commit_hash])
+        .spawn()
+        .expect("Failed to checkout date");
+}
+
+fn remove_branch() {
+    Command::new("git")
+        .args(&["branch", "-D", "lingo-rs"])
+        .spawn()
+        .expect("Failed to clean up branch date");
 }
