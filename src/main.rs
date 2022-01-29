@@ -5,7 +5,7 @@ use std::{
     collections::HashMap,
     fs::{self, File},
     io::Read,
-    path::PathBuf,
+    path::{PathBuf, MAIN_SEPARATOR},
 };
 use structopt::StructOpt;
 
@@ -23,7 +23,7 @@ lazy_static! {
 
 fn main() {
     env_logger::init_from_env(
-        env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "info"),
+        env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "debug"),
     );
 
     let args = Options::from_args();
@@ -86,12 +86,22 @@ fn extract_filetype(path: &PathBuf) -> Option<Language> {
 }
 
 fn should_skip_path(path: &PathBuf, depth: u8) -> bool {
-    let to_skip = vec!["node_modules", "build", "target", "bin", "obj", "generated"];
+    let to_skip = vec![
+        "node_modules",
+        "build",
+        "target",
+        "bin",
+        "obj",
+        "__generated__",
+        "generated",
+    ];
     if depth <= 2 {
         if let Some(path) = path.as_os_str().to_str() {
-            let should_skip = to_skip.iter().any(|pattern| path.contains(pattern));
+            let should_skip = to_skip
+                .iter()
+                .any(|pattern| path.contains(&format!("{}{}", pattern, MAIN_SEPARATOR)));
             if should_skip {
-                info!("Skipping {:?}", path);
+                debug!("Skipping {:?}", path);
             }
 
             return should_skip;

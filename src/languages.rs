@@ -29,5 +29,18 @@ pub fn get_extensions() -> Vec<Language> {
     let java = Language::new("Java", vec!["java"]);
     let kotlin = Language::new("Kotlin", vec!["kt"]);
 
-    vec![typescript, javascript, json, swift, objective_c, markdown, yaml, toml, shell, c_sharp, java, kotlin]
+    vec![
+        typescript,
+        javascript,
+        json,
+        swift,
+        objective_c,
+        markdown,
+        yaml,
+        toml,
+        shell,
+        c_sharp,
+        java,
+        kotlin,
+    ]
 }
