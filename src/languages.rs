@@ -10,7 +10,7 @@ impl Language {
     pub fn new(name: &str, extensions: Vec<&str>) -> Language {
         Language {
             extensions: extensions.iter().map(|e| e.to_string()).collect(),
-            name: name.to_string()
+            name: name.to_string(),
         }
     }
 }
