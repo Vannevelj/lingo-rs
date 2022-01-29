@@ -28,6 +28,10 @@ pub fn get_extensions() -> Vec<Language> {
     let c_sharp = Language::new("C#", vec!["cs", "cake"]);
     let java = Language::new("Java", vec!["java"]);
     let kotlin = Language::new("Kotlin", vec!["kt"]);
+    let rust = Language::new("Rust", vec!["rs"]);
+    let go = Language::new("Go", vec!["go"]);
+    let ruby = Language::new("Ruby", vec!["rb"]);
+    let python = Language::new("Python", vec!["py"]);
 
     vec![
         typescript,
@@ -42,5 +46,9 @@ pub fn get_extensions() -> Vec<Language> {
         c_sharp,
         java,
         kotlin,
+        rust,
+        go,
+        ruby,
+        python
     ]
 }
