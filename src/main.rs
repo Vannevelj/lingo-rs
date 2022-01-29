@@ -1,6 +1,6 @@
 use languages::{get_extensions, Language};
 use lazy_static::lazy_static;
-use log::{debug, error, info, warn};
+use log::{debug, error, info};
 use std::{
     collections::HashMap,
     fs::{self, File},
