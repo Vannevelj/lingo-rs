@@ -86,10 +86,15 @@ fn extract_filetype(path: &PathBuf) -> Option<Language> {
 }
 
 fn should_skip_path(path: &PathBuf, depth: u8) -> bool {
-    let to_skip = vec!["node_modules", "build", "target", "bin", "obj"];
+    let to_skip = vec!["node_modules", "build", "target", "bin", "obj", "generated"];
     if depth <= 2 {
         if let Some(path) = path.as_os_str().to_str() {
-            return to_skip.iter().any(|pattern| path.contains(pattern));
+            let should_skip = to_skip.iter().any(|pattern| path.contains(pattern));
+            if should_skip {
+                info!("Skipping {:?}", path);
+            }
+
+            return should_skip;
         }
     }
 
