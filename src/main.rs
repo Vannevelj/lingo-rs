@@ -30,7 +30,7 @@ fn main() {
 
     let mut usage_by_type: LanguageLookup = HashMap::new();
     println!("Starting now at {:?}", &args.path);
-    traverse_path(&args.path, &mut usage_by_type, 0);
+    traverse_path(&args.path, &mut usage_by_type);
 
     let total_bytes: u64 = usage_by_type.values().sum();
 
@@ -45,7 +45,7 @@ fn main() {
     // create graph
 }
 
-fn traverse_path(path: &PathBuf, lookup: &mut LanguageLookup, depth: u8) -> Option<()> {
+fn traverse_path(path: &PathBuf, lookup: &mut LanguageLookup) -> Option<()> {
     let metadata = fs::metadata(path).ok()?;
     if metadata.is_file() {
         println!("Inspecting {:?}", &path);
@@ -60,10 +60,10 @@ fn traverse_path(path: &PathBuf, lookup: &mut LanguageLookup, depth: u8) -> Opti
             *total += filesize;
         }
     } else {
-        if !should_skip_path(&path, depth) {
+        if !should_skip_path(&path) {
             for entry in fs::read_dir(path).ok()? {
                 if let Ok(directory) = entry {
-                    traverse_path(&directory.path(), lookup, depth + 1);
+                    traverse_path(&directory.path(), lookup);
                 }
             }
         }
@@ -85,7 +85,7 @@ fn extract_filetype(path: &PathBuf) -> Option<Language> {
     None
 }
 
-fn should_skip_path(path: &PathBuf, depth: u8) -> bool {
+fn should_skip_path(path: &PathBuf) -> bool {
     let to_skip = vec![
         "node_modules",
         "build",
@@ -94,21 +94,22 @@ fn should_skip_path(path: &PathBuf, depth: u8) -> bool {
         "obj",
         "__generated__",
         "generated",
+        "Pods",
+        ".git",
+        "Resources",
     ];
-    if depth <= 2 {
-        if let Some(path) = path.as_os_str().to_str() {
-            let should_skip = to_skip
-                .iter()
-                .any(|pattern| path.contains(&format!("{}{}", pattern, MAIN_SEPARATOR)));
-            if should_skip {
-                debug!("Skipping {:?}", path);
-            }
-
-            return should_skip;
+    if let Some(path) = path.as_os_str().to_str() {
+        let should_skip = to_skip
+            .iter()
+            .any(|pattern| path.contains(&format!("{}{}", pattern, MAIN_SEPARATOR)));
+        if should_skip {
+            debug!("Skipping {:?}", path);
         }
+
+        return should_skip;
     }
 
-    return false;
+    false
 }
 
 /*

@@ -18,9 +18,6 @@ impl Language {
 pub fn get_extensions() -> Vec<Language> {
     let typescript = Language::new("Typescript", vec!["ts", "tsx"]);
     let javascript = Language::new("Javascript", vec!["js", "jsx"]);
-    let json = Language::new("JSON", vec!["json"]);
-    let yaml = Language::new("YAML", vec!["yml"]);
-    let toml = Language::new("TOML", vec!["toml"]);
     let swift = Language::new("Swift", vec!["swift"]);
     let objective_c = Language::new("Objective-C", vec!["h", "m"]);
     let markdown = Language::new("Markdown", vec!["md"]);
@@ -32,16 +29,18 @@ pub fn get_extensions() -> Vec<Language> {
     let go = Language::new("Go", vec!["go"]);
     let ruby = Language::new("Ruby", vec!["rb"]);
     let python = Language::new("Python", vec!["py"]);
+    let c = Language::new("C", vec!["c"]);
+    let html = Language::new("HTML", vec!["html", "htm", "xhtml"]);
+    let css = Language::new("CSS", vec!["css", "sass", "scss"]);
+    let sql = Language::new("SQL", vec!["sql"]);
+    let cucumber = Language::new("Cucumber", vec!["feature"]);
 
     vec![
         typescript,
         javascript,
-        json,
         swift,
         objective_c,
         markdown,
-        yaml,
-        toml,
         shell,
         c_sharp,
         java,
@@ -49,6 +48,11 @@ pub fn get_extensions() -> Vec<Language> {
         rust,
         go,
         ruby,
-        python
+        python,
+        c,
+        html,
+        css,
+        sql,
+        cucumber
     ]
 }
