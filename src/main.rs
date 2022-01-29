@@ -191,11 +191,12 @@ fn checkout_date(date: &NaiveDate, branch: &String, path: &PathBuf) {
         .output()
         .expect("Failed to get rev-list");
 
-    let commit_hash = str::from_utf8(&output.stdout).expect("Failed to parse commit hash");
+    let commit_hash = str::from_utf8(&output.stdout).expect("Failed to parse commit hash").trim();
     info!("Commit hash: {}", commit_hash);
 
     Command::new("git")
         .args(["checkout", commit_hash])
+        .current_dir(&path)
         .spawn()
         .expect("Failed to checkout date");
 }
