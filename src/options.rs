@@ -13,4 +13,8 @@ pub struct Options {
     /// Start date from which to analyse
     #[structopt(short, long)]
     pub end: Option<String>,
+
+    /// The branch which to analyse
+    #[structopt(default_value = "master", short, long)]
+    pub branch: String,
 }

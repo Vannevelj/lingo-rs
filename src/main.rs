@@ -7,7 +7,7 @@ use std::{
     fs::{self, File},
     io::Read,
     ops::Add,
-    path::{PathBuf, MAIN_SEPARATOR},
+    path::{PathBuf, MAIN_SEPARATOR}, process::Command,
 };
 use structopt::StructOpt;
 
@@ -26,11 +26,11 @@ lazy_static! {
 
 fn main() {
     env_logger::init_from_env(
-        env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "debug"),
+        env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "info"),
     );
 
     let args = Options::from_args();
-    println!("Starting now at {:?}", &args.path);
+    info!("Starting now at {:?}", &args.path);
 
     let mut distribution_by_date: DistributionLookup = HashMap::new();
     let date_format = "%Y-%m-%d";
@@ -42,6 +42,9 @@ fn main() {
     }
 
     while start < end {
+        info!("Evaluating {}", start);
+        checkout_date(&start, &args.branch);
+
         let mut usage_by_type: LanguageLookup = HashMap::new();
 
         traverse_path(&args.path, &mut usage_by_type);
@@ -66,9 +69,9 @@ fn main() {
 fn traverse_path(path: &PathBuf, lookup: &mut LanguageLookup) -> Option<()> {
     let metadata = fs::metadata(path).ok()?;
     if metadata.is_file() {
-        println!("Inspecting {:?}", &path);
+        debug!("Inspecting {:?}", &path);
         if is_binary_file(path) {
-            info!("Skipping binary file at {:?}", &path);
+            debug!("Skipping binary file at {:?}", &path);
             return None;
         }
 
@@ -152,4 +155,10 @@ fn is_binary_file(path: &PathBuf) -> bool {
             false
         }
     }
+}
+
+fn checkout_date(date: &NaiveDate, branch: &String) {
+    // git checkout `git rev-list -1 --before "$startdate" "$branch"`
+    let rev_list_command = &format!("`git rev-list -1 --before \"{}\" \"{}\"`", date.format("%Y-%m-%d"), branch);
+    Command::new("git").args(&["checkout", rev_list_command]).spawn().expect("Failed to checkout date");
 }
