@@ -13,7 +13,6 @@ use std::{
 };
 use structopt::StructOpt;
 
-mod errors;
 mod languages;
 mod options;
 
@@ -196,7 +195,7 @@ fn checkout_date(date: &NaiveDate, branch: &String, path: &PathBuf) {
     info!("Commit hash: {}", commit_hash);
 
     Command::new("git")
-        .args(&["checkout", commit_hash])
+        .args(["checkout", commit_hash])
         .spawn()
         .expect("Failed to checkout date");
 }
