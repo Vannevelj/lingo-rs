@@ -1,14 +1,17 @@
-use chrono::{Datelike, Duration, NaiveDate, NaiveDateTime, TimeZone, Utc};
+use chrono::{Datelike, Duration, NaiveDate, TimeZone, Utc};
 use directories::UserDirs;
 use languages::{get_extensions, Language};
 use lazy_static::lazy_static;
 use log::{debug, error, info};
 use plotters::{
-    prelude::{BitMapBackend, ChartBuilder, IntoDrawingArea, IntoMonthly, LineSeries, PathElement},
-    style::{IntoFont, RED, WHITE},
+    prelude::{
+        BitMapBackend, ChartBuilder, IntoDrawingArea, IntoMonthly, LabelAreaPosition, LineSeries,
+        PathElement,
+    },
+    style::{Color, IntoFont, RGBColor, BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, WHITE, YELLOW},
 };
 use std::{
-    collections::HashMap,
+    collections::{HashMap, BTreeMap},
     fs::{self, File},
     io::Read,
     ops::Add,
@@ -25,7 +28,7 @@ use crate::options::Options;
 
 type LanguageLookup = HashMap<Language, u64>;
 type DistributionLookup = HashMap<NaiveDate, LanguageLookup>;
-type ChronologicalLookup = HashMap<Language, HashMap<NaiveDate, f64>>;
+type ChronologicalLookup = HashMap<Language, BTreeMap<NaiveDate, f64>>;
 
 lazy_static! {
     static ref EXTENSIONS: Vec<Language> = get_extensions();
@@ -212,7 +215,7 @@ fn rollup_data(data: DistributionLookup) -> ChronologicalLookup {
             if let Some(language_map_entry) = language_map.get_mut(&language) {
                 language_map_entry.insert(date, percentage);
             } else {
-                let mut new_language_map: HashMap<NaiveDate, f64> = HashMap::new();
+                let mut new_language_map: BTreeMap<NaiveDate, f64> = BTreeMap::new();
                 new_language_map.insert(date, percentage);
                 language_map.insert(language, new_language_map);
             }
@@ -229,16 +232,16 @@ fn create_graph(data: &ChronologicalLookup, chart_name: String) {
         .desktop_dir()
         .expect("No Desktop directory found")
         .join("out.png");
-    let root = BitMapBackend::new(&output_file, (640, 480)).into_drawing_area();
+
+    let root = BitMapBackend::new(&output_file, (800, 640)).into_drawing_area();
     root.fill(&WHITE).expect("Failed to set chart background");
-    let root = root.margin(10f32, 10f32, 10f32, 10f32);
 
     let mut chart = ChartBuilder::on(&root)
         .caption(chart_name, ("sans-serif", 40).into_font())
-        .x_label_area_size(20f32)
-        .y_label_area_size(40f32)
+        .set_label_area_size(LabelAreaPosition::Left, 60)
+        .set_label_area_size(LabelAreaPosition::Bottom, 60)
         .build_cartesian_2d(
-            (Utc.ymd(2020, 1, 1)..Utc.ymd(2022, 2, 1)).monthly(),
+            (Utc.ymd(2021, 11, 1)..Utc.ymd(2022, 2, 1)).monthly(),
             0.0f64..100.0f64,
         )
         .expect("Failed to set chart axis");
@@ -255,20 +258,38 @@ fn create_graph(data: &ChronologicalLookup, chart_name: String) {
 
     chart
         .configure_series_labels()
+        .border_style(&BLACK)
+        .background_style(&CYAN.mix(0.8))
         .draw()
         .expect("Failed to render labels");
 
-    for (language, values) in data {
+    for (index, (language, values)) in data.iter().enumerate() {
         info!("{:?}", values);
+        let color = get_color(index);
+
+        for value in values {
+            println!("Date: {:?}", value.0);
+        }
+
         chart
             .draw_series(LineSeries::new(
                 values
                     .iter()
                     .map(|(date, pct)| (Utc.ymd(date.year(), date.month(), date.day()), *pct)),
-                &RED,
+                color,
             ))
             .expect("Failed to draw series")
-            .label(&language.name)
-            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
+            .legend(|(x, y)| {
+                PathElement::new(
+                    vec![(x, y), (x + 20, y)],
+                    RGBColor(x as u8, x as u8, x as u8),
+                )
+            })
+            .label(&language.name);
     }
+}
+
+fn get_color(index: usize) -> RGBColor {
+    let colors = vec![RED, BLUE, BLACK, GREEN, YELLOW, CYAN, MAGENTA];
+    colors[index % colors.len()]
 }
