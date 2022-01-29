@@ -1,10 +1,10 @@
-use chrono::{Duration, NaiveDate, NaiveDateTime, Utc};
+use chrono::{Duration, NaiveDate, NaiveDateTime, TimeZone, Utc, Datelike};
 use directories::UserDirs;
 use languages::{get_extensions, Language};
 use lazy_static::lazy_static;
 use log::{debug, error, info};
 use plotters::{
-    prelude::{BitMapBackend, ChartBuilder, IntoDrawingArea, LineSeries},
+    prelude::{BitMapBackend, ChartBuilder, IntoDrawingArea, IntoMonthly, LineSeries},
     style::{IntoFont, RED, WHITE},
 };
 use std::{
@@ -211,7 +211,7 @@ fn rollup_data(data: DistributionLookup) -> ChronologicalLookup {
             if let Some(language_map_entry) = language_map.get_mut(&language) {
                 language_map_entry.insert(date, percentage);
             } else {
-                let new_language_map: HashMap<NaiveDate, f64> = HashMap::new();
+                let mut new_language_map: HashMap<NaiveDate, f64> = HashMap::new();
                 new_language_map.insert(date, percentage);
                 language_map.insert(language, new_language_map);
             }
@@ -235,20 +235,24 @@ fn create_graph(data: &ChronologicalLookup, chart_name: String) {
         .caption(chart_name, ("sans-serif", 40).into_font())
         .x_label_area_size(20f32)
         .y_label_area_size(40f32)
-        .build_cartesian_2d(0f32..10f32, 0f32..100f32)
+        .build_cartesian_2d(
+            (Utc.ymd(2010, 1, 1)..Utc.ymd(2018, 12, 1)).monthly(),
+            0.0f64..100.0f64,
+        )
         .expect("Failed to set chart axis");
 
     chart
         .configure_mesh()
+        .disable_x_mesh()
+        .disable_y_mesh()
         .y_label_formatter(&|x| format!("{:.2}%", x))
         .draw()
         .expect("Failed to render mesh");
 
-    for (date, values) in data {
-        let data = v
+    for (language, values) in data {
         chart
             .draw_series(LineSeries::new(
-                vec![(0.0, 0.0), (5.0, 5.0), (8.0, 7.0)],
+                values.iter().map(|(date, pct)| (Utc.ymd(date.year(), date.month(), date.day()), *pct)),
                 &RED,
             ))
             .expect("Failed to draw series");
