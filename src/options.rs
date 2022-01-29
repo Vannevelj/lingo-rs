@@ -17,4 +17,8 @@ pub struct Options {
     /// The branch which to analyse
     #[structopt(default_value = "master", short, long)]
     pub branch: String,
+
+    /// The name of the repository
+    #[structopt(short, long)]
+    pub name: String
 }
