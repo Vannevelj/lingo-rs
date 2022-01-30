@@ -3,8 +3,7 @@ use directories::UserDirs;
 use log::info;
 use plotters::{
     prelude::{
-        AreaSeries, BitMapBackend, ChartBuilder, IntoDrawingArea, IntoMonthly, LabelAreaPosition,
-        LineSeries, PathElement,
+        AreaSeries, BitMapBackend, ChartBuilder, IntoDrawingArea, IntoMonthly, LabelAreaPosition, PathElement,
     },
     style::{Color, IntoFont, RGBColor, BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, WHITE, YELLOW},
 };
@@ -73,7 +72,7 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
     chart
         .configure_series_labels()
         .border_style(&BLACK)
-        .background_style(&CYAN.mix(0.8))
+        .background_style(&WHITE.mix(0.8))
         .draw()
         .expect("Failed to render labels");
 }
