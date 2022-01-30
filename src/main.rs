@@ -22,7 +22,13 @@ use crate::{graph::create_graph, options::Options};
 
 type LanguageLookup = HashMap<Language, u64>;
 type DistributionLookup = HashMap<NaiveDate, LanguageLookup>;
-type ChronologicalLookup = HashMap<Language, BTreeMap<NaiveDate, f64>>;
+/// Tuple of the absolute & cumulative values
+#[derive(Debug, Clone)]
+pub struct Prevalence {
+    percentage: f64,
+    cumulative_percentage: f64,
+}
+type ChronologicalLookup = HashMap<Language, BTreeMap<NaiveDate, Prevalence>>;
 
 lazy_static! {
     static ref EXTENSIONS: Vec<Language> = get_extensions();
@@ -195,14 +201,20 @@ fn rollup_data(data: DistributionLookup) -> ChronologicalLookup {
 
     for (date, values) in data {
         let total_bytes: u64 = values.values().sum();
+        let mut cumulative_percentage = 0.0;
         for (language, count) in values {
             let percentage = count as f64 / total_bytes as f64 * 100f64;
+            cumulative_percentage += percentage;
+            let prevalence = Prevalence {
+                percentage,
+                cumulative_percentage,
+            };
 
             if let Some(language_map_entry) = language_map.get_mut(&language) {
-                language_map_entry.insert(date, percentage);
+                language_map_entry.insert(date, prevalence);
             } else {
-                let mut new_language_map: BTreeMap<NaiveDate, f64> = BTreeMap::new();
-                new_language_map.insert(date, percentage);
+                let mut new_language_map: BTreeMap<NaiveDate, Prevalence> = BTreeMap::new();
+                new_language_map.insert(date, prevalence);
                 language_map.insert(language, new_language_map);
             }
         }

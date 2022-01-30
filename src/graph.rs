@@ -72,9 +72,12 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
         chart
             .draw_series(
                 AreaSeries::new(
-                    values
-                        .iter()
-                        .map(|(date, pct)| (Utc.ymd(date.year(), date.month(), date.day()), *pct)),
+                    values.iter().map(|(date, pct)| {
+                        (
+                            Utc.ymd(date.year(), date.month(), date.day()),
+                            pct.percentage,
+                        )
+                    }),
                     0.0,
                     color.mix(0.2),
                 )
