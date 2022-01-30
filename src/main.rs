@@ -59,7 +59,7 @@ fn main() {
 
         let mut usage_by_type: LanguageLookup = BTreeMap::new();
 
-        traverse_path(&args.path, &mut usage_by_type);
+        traverse_path(&args.path, &mut usage_by_type, 0);
         distribution_by_date.insert(start, usage_by_type);
 
         start = start.add(Duration::days(1));
@@ -71,27 +71,58 @@ fn main() {
     create_graph(&mapped_data, args.name);
 }
 
-fn traverse_path(path: &Path, lookup: &mut LanguageLookup) -> Option<()> {
-    let metadata = fs::metadata(path).ok()?;
-    if metadata.is_file() {
-        debug!("Inspecting {:?}", &path);
-        if is_binary_file(path) {
-            debug!("Skipping binary file at {:?}", &path);
-            return None;
-        }
+fn traverse_path(path: &Path, lookup: &mut LanguageLookup, tries: u8) {
+    match fs::metadata(path) {
+        Ok(metadata) => {
+            if metadata.is_file() {
+                debug!("Inspecting {:?}", &path);
+                if is_binary_file(path) {
+                    debug!("Skipping binary file at {:?}", &path);
+                    return;
+                }
 
-        let filesize = metadata.len();
-        if let Some(language) = extract_filetype(path) {
-            let total = lookup.entry(language).or_insert(0);
-            *total += filesize;
+                let filesize = metadata.len();
+                if let Some(language) = extract_filetype(path) {
+                    let total = lookup.entry(language).or_insert(0);
+                    *total += filesize;
+                }
+            } else if !should_skip_path(path) {
+                match fs::read_dir(path) {
+                    Ok(directory_iterator) => {
+                        for entry in directory_iterator {
+                            match entry {
+                                Ok(directory) => traverse_path(&directory.path(), lookup, 0),
+                                Err(err) => {
+                                    error!(
+                                        "Failed to read directory entry for path {:?}: {}",
+                                        path, err
+                                    );
+                                    if tries < 3 {
+                                        info!("Retrying {:?}", path);
+                                        traverse_path(path, lookup, tries + 1);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        error!("Failed to read directory for path {:?}: {}", path, err);
+                        if tries < 3 {
+                            info!("Retrying {:?}", path);
+                            traverse_path(path, lookup, tries + 1);
+                        }
+                    }
+                }
+            }
         }
-    } else if !should_skip_path(path) {
-        for entry in (fs::read_dir(path).ok()?).flatten() {
-            traverse_path(&entry.path(), lookup);
+        Err(err) => {
+            error!("Failed to read metadata for path {:?}: {}", path, err);
+            if tries < 3 {
+                info!("Retrying {:?}", path);
+                traverse_path(path, lookup, tries + 1);
+            }
         }
     }
-
-    None
 }
 
 fn extract_filetype(path: &Path) -> Option<Language> {
