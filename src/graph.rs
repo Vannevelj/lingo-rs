@@ -2,13 +2,13 @@ use std::ops::Add;
 
 use chrono::{Duration, NaiveDate, TimeZone, Utc};
 use directories::UserDirs;
-use log::info;
+use log::{info, debug};
 use plotters::prelude::*;
 
 use crate::ChronologicalLookup;
 
 pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
-    info!("Creating graph");
+    info!("Creating graph..");
     let output_file = UserDirs::new()
         .expect("Could not find a HOME directory")
         .desktop_dir()
@@ -46,26 +46,18 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
         info!("{:?}", values);
         let color = get_color(index);
 
-        // let d = [25f64, 37f64, 15f64, 32f64, 45f64, 33f64, 32f64, 10f64, 0f64, 21f64, 5f64];
-        // let iter = (0..).zip(d.iter().map(|v| *v as i32)).map(|(x, y)| {
-        //     let x = x;
-        //     let y = y;
-        //     let x0 = SegmentValue::Exact(x);
-        //     let x1 = SegmentValue::Exact(x + 1);
-        //     let mut bar = Rectangle::new([(x0, 0), (x1, y as i32)], RED.filled());
-        //     bar.set_margin(0, 0, 5, 5);
-        //     bar
-        // });
-
         chart
             .draw_series(values.iter().map(|(x, y)| {
                 let x0 = Utc.from_utc_date(x);
-                let next = x.add(Duration::days(1));
-                let x1 = Utc.from_utc_date(&next);
+                let x1 = Utc.from_utc_date(&x.add(Duration::days(1)));
+
+                let offset_from_bottom = y.cumulative_percentage - y.percentage;
+                debug!("Rendering {} at offset {}, length {}", language.name, offset_from_bottom, y.percentage);
+
                 let mut bar = Rectangle::new(
                     [
-                        (x0, y.cumulative_percentage - y.percentage),
-                        (x1, y.percentage),
+                        (x0, offset_from_bottom),
+                        (x1, y.cumulative_percentage),
                     ],
                     color.filled(),
                 );
@@ -77,26 +69,6 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
                 PathElement::new(vec![(x, y), (x + 20, y)], color.stroke_width(3))
             })
             .label(&language.name);
-
-        // chart
-        //     .draw_series(
-        //         AreaSeries::new(
-        //             values.iter().map(|(date, pct)| {
-        //                 (
-        //                     Utc.ymd(date.year(), date.month(), date.day()),
-        //                     pct.percentage,
-        //                 )
-        //             }),
-        //             0.0,
-        //             color.mix(0.2),
-        //         )
-        //         .border_style(color.stroke_width(1)),
-        //     )
-        //     .expect("Failed to draw series")
-        //     .legend(move |(x, y)| {
-        //         PathElement::new(vec![(x, y), (x + 20, y)], color.stroke_width(3))
-        //     })
-        //     .label(&language.name);
     }
 
     chart

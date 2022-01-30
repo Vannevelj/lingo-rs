@@ -203,7 +203,6 @@ fn rollup_data(data: DistributionLookup) -> ChronologicalLookup {
         let total_bytes: u64 = values.values().sum();
         let mut cumulative_percentage = 0.0;
         for (language, count) in values {
-            println!("Evaluating {} on {}", language.name, date);
             let percentage = count as f64 / total_bytes as f64 * 100f64;
             cumulative_percentage += percentage;
             let prevalence = Prevalence {
@@ -216,11 +215,11 @@ fn rollup_data(data: DistributionLookup) -> ChronologicalLookup {
             } else {
                 let mut new_language_map: BTreeMap<NaiveDate, Prevalence> = BTreeMap::new();
                 new_language_map.insert(date, prevalence);
-                language_map.insert(language, new_language_map);
+                language_map.insert(language.clone(), new_language_map);
             }
-        }
 
-        //println!("Total cumulative: {}", cumulative_percentage);
+            debug!("Evaluating {} on {}: {} ({})", language.name, date, percentage, cumulative_percentage);
+        }
     }
 
     language_map
