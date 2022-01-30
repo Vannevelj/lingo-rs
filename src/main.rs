@@ -209,21 +209,30 @@ fn checkout_date(date: &NaiveDate, branch: &str, path: &Path) {
         .trim();
     debug!("Commit hash: {}", commit_hash);
 
-    Command::new("git")
+    let mut child = Command::new("git")
         .args(["checkout", commit_hash])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .current_dir(&path)
         .spawn()
         .expect("Failed to checkout date");
+    match child.wait() {
+        Ok(_) => debug!("git checkout finished"),
+        Err(err) => error!("Failed to check out commit hash {}: {}", commit_hash, err),
+    }
 }
 
 fn reset_repo(branch: &str, path: &Path) {
-    Command::new("git")
+    let mut child = Command::new("git")
         .args(["checkout", branch])
         .current_dir(path)
         .spawn()
         .expect("Failed to reset repository");
+
+    match child.wait() {
+        Ok(_) => debug!("reset repo finished"),
+        Err(err) => error!("Failed to reset the repository: {}", err),
+    }
 }
 
 fn rollup_data(data: DistributionLookup) -> ChronologicalLookup {
