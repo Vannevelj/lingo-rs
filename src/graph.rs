@@ -44,7 +44,7 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
     info!("Creating {} series", data.len());
 
     for (language, values) in data.iter() {
-        info!("{:?}", values);
+        debug!("{:?}", values);
         let color = generate_color();
 
         chart
