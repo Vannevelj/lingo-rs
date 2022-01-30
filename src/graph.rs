@@ -1,13 +1,9 @@
-use chrono::{Datelike, NaiveDate, TimeZone, Utc};
+use std::ops::Add;
+
+use chrono::{Datelike, Duration, NaiveDate, TimeZone, Utc};
 use directories::UserDirs;
 use log::info;
-use plotters::{
-    prelude::{
-        AreaSeries, BitMapBackend, ChartBuilder, IntoDrawingArea, IntoMonthly, LabelAreaPosition,
-        PathElement, Rectangle, SegmentValue,
-    },
-    style::{Color, IntoFont, RGBColor, BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, WHITE, YELLOW},
-};
+use plotters::prelude::*;
 
 use crate::ChronologicalLookup;
 
@@ -26,13 +22,10 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
     let end_date = get_max_date(data).expect("No end date found");
 
     let mut chart = ChartBuilder::on(&root)
-        .caption(chart_name, ("sans-serif", 40).into_font())
-        .set_label_area_size(LabelAreaPosition::Left, 60)
-        .set_label_area_size(LabelAreaPosition::Bottom, 60)
-        .build_cartesian_2d(
-            (Utc.from_utc_date(start_date)..Utc.from_utc_date(end_date)).monthly(),
-            -0.00001f64..101.0f64,
-        )
+        .set_label_area_size(LabelAreaPosition::Left, 40)
+        .set_label_area_size(LabelAreaPosition::Bottom, 40)
+        .caption("Bar Demo", ("sans-serif", 40))
+        .build_cartesian_2d((0..5).into_segmented(), 0..50)
         .expect("Failed to set chart axis");
 
     chart
@@ -61,33 +54,40 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
         //     bar
         // });
 
-        // chart.draw_series((0..).zip(data.iter()).map(|(x, y)| {
-        //     let x0 = SegmentValue::Exact(x);
-        //     let x1 = SegmentValue::Exact(x + 1);
-        //     let mut bar = Rectangle::new([(x0, 0), (x1, *y)], RED.filled());
-        //     bar.set_margin(0, 0, 5, 5);
-        //     bar
-        // })).unwrap();
-
         chart
-            .draw_series(
-                AreaSeries::new(
-                    values.iter().map(|(date, pct)| {
-                        (
-                            Utc.ymd(date.year(), date.month(), date.day()),
-                            pct.percentage,
-                        )
-                    }),
-                    0.0,
-                    color.mix(0.2),
-                )
-                .border_style(color.stroke_width(1)),
-            )
+            .draw_series(values.iter().map(|(x, y)| {
+                let x0 = SegmentValue::Exact(Utc.from_utc_date(x).day() as i32);
+                let next = x.add(Duration::days(1));
+                let x1 = SegmentValue::Exact(Utc.from_utc_date(&next).day() as i32);
+                let mut bar = Rectangle::new([(x0, 0), (x1, y.percentage as i32)], color.filled());
+                bar.set_margin(0, 0, 5, 5);
+                bar
+            }))
             .expect("Failed to draw series")
             .legend(move |(x, y)| {
                 PathElement::new(vec![(x, y), (x + 20, y)], color.stroke_width(3))
             })
             .label(&language.name);
+
+        // chart
+        //     .draw_series(
+        //         AreaSeries::new(
+        //             values.iter().map(|(date, pct)| {
+        //                 (
+        //                     Utc.ymd(date.year(), date.month(), date.day()),
+        //                     pct.percentage,
+        //                 )
+        //             }),
+        //             0.0,
+        //             color.mix(0.2),
+        //         )
+        //         .border_style(color.stroke_width(1)),
+        //     )
+        //     .expect("Failed to draw series")
+        //     .legend(move |(x, y)| {
+        //         PathElement::new(vec![(x, y), (x + 20, y)], color.stroke_width(3))
+        //     })
+        //     .label(&language.name);
     }
 
     chart
