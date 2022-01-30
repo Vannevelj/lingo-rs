@@ -3,8 +3,8 @@ use directories::UserDirs;
 use log::info;
 use plotters::{
     prelude::{
-        BitMapBackend, ChartBuilder, IntoDrawingArea, IntoMonthly, LabelAreaPosition, LineSeries,
-        PathElement,
+        AreaSeries, BitMapBackend, ChartBuilder, IntoDrawingArea, IntoMonthly, LabelAreaPosition,
+        LineSeries, PathElement,
     },
     style::{Color, IntoFont, RGBColor, BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, WHITE, YELLOW},
 };
@@ -50,12 +50,16 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
         let color = get_color(index);
 
         chart
-            .draw_series(LineSeries::new(
-                values
-                    .iter()
-                    .map(|(date, pct)| (Utc.ymd(date.year(), date.month(), date.day()), *pct)),
-                color,
-            ))
+            .draw_series(
+                AreaSeries::new(
+                    values
+                        .iter()
+                        .map(|(date, pct)| (Utc.ymd(date.year(), date.month(), date.day()), *pct)),
+                    0.0,
+                    color.mix(0.2),
+                )
+                .border_style(color),
+            )
             .expect("Failed to draw series")
             .legend(|(x, y)| {
                 PathElement::new(
