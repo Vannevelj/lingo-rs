@@ -1,6 +1,6 @@
 use std::ops::Add;
 
-use chrono::{Datelike, Duration, NaiveDate, TimeZone, Utc};
+use chrono::{Duration, NaiveDate, TimeZone, Utc};
 use directories::UserDirs;
 use log::info;
 use plotters::prelude::*;

@@ -28,7 +28,7 @@ pub struct Prevalence {
     percentage: f64,
     cumulative_percentage: f64,
 }
-type ChronologicalLookup = HashMap<Language, BTreeMap<NaiveDate, Prevalence>>;
+type ChronologicalLookup = BTreeMap<Language, BTreeMap<NaiveDate, Prevalence>>;
 
 lazy_static! {
     static ref EXTENSIONS: Vec<Language> = get_extensions();
@@ -197,7 +197,7 @@ fn reset_repo(branch: &String, path: &PathBuf) {
 }
 
 fn rollup_data(data: DistributionLookup) -> ChronologicalLookup {
-    let mut language_map: ChronologicalLookup = HashMap::new();
+    let mut language_map: ChronologicalLookup = BTreeMap::new();
 
     for (date, values) in data {
         let total_bytes: u64 = values.values().sum();
@@ -218,6 +218,8 @@ fn rollup_data(data: DistributionLookup) -> ChronologicalLookup {
                 language_map.insert(language, new_language_map);
             }
         }
+
+        println!("Total cumulative: {}", cumulative_percentage);
     }
 
     language_map

@@ -1,4 +1,4 @@
-use std::hash::Hash;
+use std::{hash::Hash, cmp::Ordering};
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub struct Language {
@@ -12,6 +12,18 @@ impl Language {
             extensions: extensions.iter().map(|e| e.to_string()).collect(),
             name: name.to_string(),
         }
+    }
+}
+
+impl Ord for Language {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.name.cmp(&other.name)
+    }
+}
+
+impl PartialOrd for Language {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
