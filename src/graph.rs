@@ -22,10 +22,13 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
     let end_date = get_max_date(data).expect("No end date found");
 
     let mut chart = ChartBuilder::on(&root)
-        .set_label_area_size(LabelAreaPosition::Left, 40)
-        .set_label_area_size(LabelAreaPosition::Bottom, 40)
-        .caption("Bar Demo", ("sans-serif", 40))
-        .build_cartesian_2d((Utc.from_utc_date(start_date)..Utc.from_utc_date(end_date)).monthly(), 0..100)
+        .caption(chart_name, ("sans-serif", 40).into_font())
+        .set_label_area_size(LabelAreaPosition::Left, 60)
+        .set_label_area_size(LabelAreaPosition::Bottom, 60)
+        .build_cartesian_2d(
+            (Utc.from_utc_date(start_date)..Utc.from_utc_date(end_date)).monthly(),
+            -0.00001f64..101.0f64,
+        )
         .expect("Failed to set chart axis");
 
     chart
@@ -59,7 +62,13 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
                 let x0 = Utc.from_utc_date(x);
                 let next = x.add(Duration::days(1));
                 let x1 = Utc.from_utc_date(&next);
-                let mut bar = Rectangle::new([(x0, (y.cumulative_percentage - y.percentage) as i32), (x1, y.percentage as i32)], color.filled());
+                let mut bar = Rectangle::new(
+                    [
+                        (x0, y.cumulative_percentage - y.percentage),
+                        (x1, y.percentage),
+                    ],
+                    color.filled(),
+                );
                 bar.set_margin(0, 0, 5, 5);
                 bar
             }))
