@@ -51,6 +51,8 @@ fn main() {
         end = NaiveDate::parse_from_str(d.as_str(), date_format).expect("Failed to parse end date");
     }
 
+    reset_repo(&args.branch, &args.path);
+
     while start < end {
         info!("Evaluating {}", start);
         checkout_date(&start, &args.branch, &args.path);
