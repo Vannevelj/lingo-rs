@@ -4,6 +4,7 @@ use chrono::{Duration, NaiveDate, TimeZone, Utc};
 use directories::UserDirs;
 use log::{info, debug};
 use plotters::prelude::*;
+use rand::Rng;
 
 use crate::ChronologicalLookup;
 
@@ -42,9 +43,9 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
 
     info!("Creating {} series", data.len());
 
-    for (index, (language, values)) in data.iter().enumerate() {
+    for (language, values) in data.iter() {
         info!("{:?}", values);
-        let color = get_color(index);
+        let color = generate_color();
 
         chart
             .draw_series(values.iter().map(|(x, y)| {
@@ -79,15 +80,15 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
         .expect("Failed to render labels");
 }
 
-fn get_color(index: usize) -> RGBColor {
-    let colors = vec![RED, BLUE, BLACK, GREEN, YELLOW, CYAN, MAGENTA];
-    colors[index % colors.len()]
-}
-
 fn get_min_date(data: &ChronologicalLookup) -> Option<&NaiveDate> {
     data.values().flat_map(|btree| btree.keys()).min()
 }
 
 fn get_max_date(data: &ChronologicalLookup) -> Option<&NaiveDate> {
     data.values().flat_map(|btree| btree.keys()).max()
+}
+
+fn generate_color() -> RGBColor {
+    let mut rng = rand::thread_rng();
+    RGBColor(rng.gen_range(0..255), rng.gen_range(0..255), rng.gen_range(0..255))
 }

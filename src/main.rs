@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use log::{debug, error, info};
 
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::BTreeMap,
     fs::{self, File},
     io::Read,
     ops::Add,
