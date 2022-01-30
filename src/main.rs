@@ -3,6 +3,7 @@ use languages::{get_extensions, Language};
 use lazy_static::lazy_static;
 use log::{debug, error, info};
 
+use core::time;
 use std::{
     collections::BTreeMap,
     fs::{self, File},
@@ -10,7 +11,7 @@ use std::{
     ops::Add,
     path::{Path, MAIN_SEPARATOR},
     process::{Command, Stdio},
-    str,
+    str, thread,
 };
 use structopt::StructOpt;
 
@@ -72,6 +73,21 @@ fn main() {
 }
 
 fn traverse_path(path: &Path, lookup: &mut LanguageLookup, tries: u8) {
+    fn retry(
+        error: std::io::Error,
+        message: &str,
+        path: &Path,
+        lookup: &mut LanguageLookup,
+        tries: u8,
+    ) {
+        error!("{} for path {:?}: {}", message, path, error);
+        if tries < 3 {
+            info!("Retrying {:?}", path);
+            thread::sleep(time::Duration::from_millis(2000));
+            traverse_path(path, lookup, tries + 1);
+        }
+    }
+
     match fs::metadata(path) {
         Ok(metadata) => {
             if metadata.is_file() {
@@ -92,36 +108,21 @@ fn traverse_path(path: &Path, lookup: &mut LanguageLookup, tries: u8) {
                         for entry in directory_iterator {
                             match entry {
                                 Ok(directory) => traverse_path(&directory.path(), lookup, 0),
-                                Err(err) => {
-                                    error!(
-                                        "Failed to read directory entry for path {:?}: {}",
-                                        path, err
-                                    );
-                                    if tries < 3 {
-                                        info!("Retrying {:?}", path);
-                                        traverse_path(path, lookup, tries + 1);
-                                    }
-                                }
+                                Err(err) => retry(
+                                    err,
+                                    "Failed to read directory entry",
+                                    path,
+                                    lookup,
+                                    tries,
+                                ),
                             }
                         }
                     }
-                    Err(err) => {
-                        error!("Failed to read directory for path {:?}: {}", path, err);
-                        if tries < 3 {
-                            info!("Retrying {:?}", path);
-                            traverse_path(path, lookup, tries + 1);
-                        }
-                    }
+                    Err(err) => retry(err, "Failed to read directory", path, lookup, tries),
                 }
             }
         }
-        Err(err) => {
-            error!("Failed to read metadata for path {:?}: {}", path, err);
-            if tries < 3 {
-                info!("Retrying {:?}", path);
-                traverse_path(path, lookup, tries + 1);
-            }
-        }
+        Err(err) => retry(err, "Failed to read metadata entry", path, lookup, tries),
     }
 }
 
