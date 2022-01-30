@@ -3,7 +3,8 @@ use directories::UserDirs;
 use log::info;
 use plotters::{
     prelude::{
-        AreaSeries, BitMapBackend, ChartBuilder, IntoDrawingArea, IntoMonthly, LabelAreaPosition, PathElement, SegmentValue, Rectangle,
+        AreaSeries, BitMapBackend, ChartBuilder, IntoDrawingArea, IntoMonthly, LabelAreaPosition,
+        PathElement, Rectangle, SegmentValue,
     },
     style::{Color, IntoFont, RGBColor, BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, WHITE, YELLOW},
 };
@@ -80,12 +81,8 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
                 .border_style(color.stroke_width(1)),
             )
             .expect("Failed to draw series")
-            .legend(move |(x, y)|  {
-                println!("x,y: {} {}", x, y);
-                PathElement::new(
-                    vec![(x, y), (x + 20, y)],
-                    color.stroke_width(3),
-                )
+            .legend(move |(x, y)| {
+                PathElement::new(vec![(x, y), (x + 20, y)], color.stroke_width(3))
             })
             .label(&language.name);
     }
