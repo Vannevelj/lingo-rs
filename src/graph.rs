@@ -2,7 +2,7 @@ use std::ops::Add;
 
 use chrono::{Duration, NaiveDate, TimeZone, Utc};
 use directories::UserDirs;
-use log::{info, debug};
+use log::{debug, info};
 use plotters::prelude::*;
 use rand::Rng;
 
@@ -14,7 +14,7 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
         .expect("Could not find a HOME directory")
         .desktop_dir()
         .expect("No Desktop directory found")
-        .join("out.png");
+        .join(format!("{}.png", chart_name));
 
     let root = BitMapBackend::new(&output_file, (800, 640)).into_drawing_area();
     root.fill(&WHITE).expect("Failed to set chart background");
@@ -28,7 +28,7 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
         .set_label_area_size(LabelAreaPosition::Bottom, 60)
         .build_cartesian_2d(
             (Utc.from_utc_date(start_date)..Utc.from_utc_date(end_date)).monthly(),
-            -0.00001f64..101.0f64,
+            -0.00001..101.0,
         )
         .expect("Failed to set chart axis");
 
@@ -53,13 +53,13 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
                 let x1 = Utc.from_utc_date(&x.add(Duration::days(1)));
 
                 let offset_from_bottom = y.cumulative_percentage - y.percentage;
-                debug!("Rendering {} at offset {}, length {}", language.name, offset_from_bottom, y.percentage);
+                debug!(
+                    "Rendering {} at offset {}, length {}",
+                    language.name, offset_from_bottom, y.percentage
+                );
 
                 let mut bar = Rectangle::new(
-                    [
-                        (x0, offset_from_bottom),
-                        (x1, y.cumulative_percentage),
-                    ],
+                    [(x0, offset_from_bottom), (x1, y.cumulative_percentage)],
                     color.filled(),
                 );
                 bar.set_margin(0, 0, 5, 5);
@@ -90,5 +90,9 @@ fn get_max_date(data: &ChronologicalLookup) -> Option<&NaiveDate> {
 
 fn generate_color() -> RGBColor {
     let mut rng = rand::thread_rng();
-    RGBColor(rng.gen_range(0..255), rng.gen_range(0..255), rng.gen_range(0..255))
+    RGBColor(
+        rng.gen_range(0..255),
+        rng.gen_range(0..255),
+        rng.gen_range(0..255),
+    )
 }

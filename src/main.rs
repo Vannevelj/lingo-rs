@@ -8,7 +8,7 @@ use std::{
     fs::{self, File},
     io::Read,
     ops::Add,
-    path::{PathBuf, MAIN_SEPARATOR},
+    path::{Path, MAIN_SEPARATOR},
     process::{Command, Stdio},
     str,
 };
@@ -22,7 +22,7 @@ use crate::{graph::create_graph, options::Options};
 
 type LanguageLookup = BTreeMap<Language, u64>;
 type DistributionLookup = BTreeMap<NaiveDate, LanguageLookup>;
-/// Tuple of the absolute & cumulative values
+
 #[derive(Debug, Clone)]
 pub struct Prevalence {
     percentage: f64,
@@ -69,7 +69,7 @@ fn main() {
     create_graph(&mapped_data, args.name);
 }
 
-fn traverse_path(path: &PathBuf, lookup: &mut LanguageLookup) -> Option<()> {
+fn traverse_path(path: &Path, lookup: &mut LanguageLookup) -> Option<()> {
     let metadata = fs::metadata(path).ok()?;
     if metadata.is_file() {
         debug!("Inspecting {:?}", &path);
@@ -79,24 +79,20 @@ fn traverse_path(path: &PathBuf, lookup: &mut LanguageLookup) -> Option<()> {
         }
 
         let filesize = metadata.len();
-        if let Some(language) = extract_filetype(&path) {
+        if let Some(language) = extract_filetype(path) {
             let total = lookup.entry(language).or_insert(0);
             *total += filesize;
         }
-    } else {
-        if !should_skip_path(&path) {
-            for entry in fs::read_dir(path).ok()? {
-                if let Ok(directory) = entry {
-                    traverse_path(&directory.path(), lookup);
-                }
-            }
+    } else if !should_skip_path(path) {
+        for entry in (fs::read_dir(path).ok()?).flatten() {
+            traverse_path(&entry.path(), lookup);
         }
     }
 
-    return None;
+    None
 }
 
-fn extract_filetype(path: &PathBuf) -> Option<Language> {
+fn extract_filetype(path: &Path) -> Option<Language> {
     // figure out which language a file is
     let current_path_extension = path.extension()?.to_str()?.to_string();
     if let Some(language) = EXTENSIONS
@@ -109,7 +105,7 @@ fn extract_filetype(path: &PathBuf) -> Option<Language> {
     None
 }
 
-fn should_skip_path(path: &PathBuf) -> bool {
+fn should_skip_path(path: &Path) -> bool {
     let to_skip = vec![
         "node_modules",
         "build",
@@ -140,7 +136,7 @@ fn should_skip_path(path: &PathBuf) -> bool {
     Git considers a file binary if there is a NUL character within the first 8000 bytes
     see: https://github.com/git/git/blob/9c9b961d7eb15fb583a2a812088713a68a85f1c0/xdiff-interface.c#L187-L193
 */
-fn is_binary_file(path: &PathBuf) -> bool {
+fn is_binary_file(path: &Path) -> bool {
     let file = File::open(path);
     match file {
         Ok(mut file) => {
@@ -160,7 +156,7 @@ fn is_binary_file(path: &PathBuf) -> bool {
     }
 }
 
-fn checkout_date(date: &NaiveDate, branch: &String, path: &PathBuf) {
+fn checkout_date(date: &NaiveDate, branch: &str, path: &Path) {
     let output = Command::new("git")
         .args([
             "rev-list",
@@ -188,7 +184,7 @@ fn checkout_date(date: &NaiveDate, branch: &String, path: &PathBuf) {
         .expect("Failed to checkout date");
 }
 
-fn reset_repo(branch: &String, path: &PathBuf) {
+fn reset_repo(branch: &str, path: &Path) {
     Command::new("git")
         .args(["checkout", branch])
         .current_dir(path)
@@ -203,7 +199,7 @@ fn rollup_data(data: DistributionLookup) -> ChronologicalLookup {
         let total_bytes: u64 = values.values().sum();
         let mut cumulative_percentage = 0.0;
         for (language, count) in values {
-            let percentage = count as f64 / total_bytes as f64 * 100f64;
+            let percentage = count as f64 / total_bytes as f64 * 100.0;
             cumulative_percentage += percentage;
             let prevalence = Prevalence {
                 percentage,
@@ -218,7 +214,10 @@ fn rollup_data(data: DistributionLookup) -> ChronologicalLookup {
                 language_map.insert(language.clone(), new_language_map);
             }
 
-            debug!("Evaluating {} on {}: {} ({})", language.name, date, percentage, cumulative_percentage);
+            debug!(
+                "Evaluating {} on {}: {} ({})",
+                language.name, date, percentage, cumulative_percentage
+            );
         }
     }
 

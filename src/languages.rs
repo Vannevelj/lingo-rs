@@ -1,4 +1,4 @@
-use std::{hash::Hash, cmp::Ordering};
+use std::{cmp::Ordering, hash::Hash};
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub struct Language {
