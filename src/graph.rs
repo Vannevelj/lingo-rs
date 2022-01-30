@@ -3,7 +3,7 @@ use directories::UserDirs;
 use log::info;
 use plotters::{
     prelude::{
-        AreaSeries, BitMapBackend, ChartBuilder, IntoDrawingArea, IntoMonthly, LabelAreaPosition, PathElement,
+        AreaSeries, BitMapBackend, ChartBuilder, IntoDrawingArea, IntoMonthly, LabelAreaPosition, PathElement, SegmentValue, Rectangle,
     },
     style::{Color, IntoFont, RGBColor, BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, WHITE, YELLOW},
 };
@@ -30,7 +30,7 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
         .set_label_area_size(LabelAreaPosition::Bottom, 60)
         .build_cartesian_2d(
             (Utc.from_utc_date(start_date)..Utc.from_utc_date(end_date)).monthly(),
-            0.0f64..100.0f64,
+            -0.00001f64..101.0f64,
         )
         .expect("Failed to set chart axis");
 
@@ -39,6 +39,7 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
         .disable_x_mesh()
         .disable_y_mesh()
         .y_label_formatter(&|x| format!("{:.2}%", x))
+        .y_desc("Prevalence")
         .draw()
         .expect("Failed to render mesh");
 
@@ -47,6 +48,25 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
     for (index, (language, values)) in data.iter().enumerate() {
         info!("{:?}", values);
         let color = get_color(index);
+
+        // let d = [25f64, 37f64, 15f64, 32f64, 45f64, 33f64, 32f64, 10f64, 0f64, 21f64, 5f64];
+        // let iter = (0..).zip(d.iter().map(|v| *v as i32)).map(|(x, y)| {
+        //     let x = x;
+        //     let y = y;
+        //     let x0 = SegmentValue::Exact(x);
+        //     let x1 = SegmentValue::Exact(x + 1);
+        //     let mut bar = Rectangle::new([(x0, 0), (x1, y as i32)], RED.filled());
+        //     bar.set_margin(0, 0, 5, 5);
+        //     bar
+        // });
+
+        // chart.draw_series((0..).zip(data.iter()).map(|(x, y)| {
+        //     let x0 = SegmentValue::Exact(x);
+        //     let x1 = SegmentValue::Exact(x + 1);
+        //     let mut bar = Rectangle::new([(x0, 0), (x1, *y)], RED.filled());
+        //     bar.set_margin(0, 0, 5, 5);
+        //     bar
+        // })).unwrap();
 
         chart
             .draw_series(
@@ -57,13 +77,14 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
                     0.0,
                     color.mix(0.2),
                 )
-                .border_style(color),
+                .border_style(color.stroke_width(1)),
             )
             .expect("Failed to draw series")
-            .legend(|(x, y)| {
+            .legend(move |(x, y)|  {
+                println!("x,y: {} {}", x, y);
                 PathElement::new(
                     vec![(x, y), (x + 20, y)],
-                    RGBColor(x as u8, x as u8, x as u8),
+                    color.stroke_width(3),
                 )
             })
             .label(&language.name);
