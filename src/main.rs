@@ -20,8 +20,8 @@ mod options;
 
 use crate::{graph::create_graph, options::Options};
 
-type LanguageLookup = HashMap<Language, u64>;
-type DistributionLookup = HashMap<NaiveDate, LanguageLookup>;
+type LanguageLookup = BTreeMap<Language, u64>;
+type DistributionLookup = BTreeMap<NaiveDate, LanguageLookup>;
 /// Tuple of the absolute & cumulative values
 #[derive(Debug, Clone)]
 pub struct Prevalence {
@@ -42,7 +42,7 @@ fn main() {
     let args = Options::from_args();
     info!("Starting now at {:?}", &args.path);
 
-    let mut distribution_by_date: DistributionLookup = HashMap::new();
+    let mut distribution_by_date: DistributionLookup = BTreeMap::new();
     let date_format = "%Y-%m-%d";
     let mut start = NaiveDate::parse_from_str(args.start.as_str(), date_format)
         .expect("Invalid start date provided");
@@ -55,7 +55,7 @@ fn main() {
         info!("Evaluating {}", start);
         checkout_date(&start, &args.branch, &args.path);
 
-        let mut usage_by_type: LanguageLookup = HashMap::new();
+        let mut usage_by_type: LanguageLookup = BTreeMap::new();
 
         traverse_path(&args.path, &mut usage_by_type);
         distribution_by_date.insert(start, usage_by_type);
@@ -203,6 +203,7 @@ fn rollup_data(data: DistributionLookup) -> ChronologicalLookup {
         let total_bytes: u64 = values.values().sum();
         let mut cumulative_percentage = 0.0;
         for (language, count) in values {
+            println!("Evaluating {} on {}", language.name, date);
             let percentage = count as f64 / total_bytes as f64 * 100f64;
             cumulative_percentage += percentage;
             let prevalence = Prevalence {
@@ -219,7 +220,7 @@ fn rollup_data(data: DistributionLookup) -> ChronologicalLookup {
             }
         }
 
-        println!("Total cumulative: {}", cumulative_percentage);
+        //println!("Total cumulative: {}", cumulative_percentage);
     }
 
     language_map
