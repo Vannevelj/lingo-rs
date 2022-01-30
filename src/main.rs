@@ -175,6 +175,8 @@ fn checkout_date(date: &NaiveDate, branch: &String, path: &PathBuf) {
 
     Command::new("git")
         .args(["checkout", commit_hash])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .current_dir(&path)
         .spawn()
         .expect("Failed to checkout date");
