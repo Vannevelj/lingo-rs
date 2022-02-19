@@ -2,6 +2,8 @@
 
 lingo-rs allows you to generate a graph depicting the programming language distribution in a git repo over time. 
 
+![Example output graph](https://user-images.githubusercontent.com/2777107/154803382-9975cb48-33d0-4659-a8cc-52b3afa517a0.png)
+
 ## Getting started
 
 To create your first graph, run the following:
