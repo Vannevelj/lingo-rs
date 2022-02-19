@@ -1,10 +1,9 @@
-use std::ops::Add;
-
 use chrono::{Duration, NaiveDate, TimeZone, Utc};
 use directories::UserDirs;
+use hex::FromHex;
 use log::{debug, info};
 use plotters::prelude::*;
-use rand::Rng;
+use std::ops::Add;
 
 use crate::ChronologicalLookup;
 
@@ -45,7 +44,7 @@ pub fn create_graph(data: &ChronologicalLookup, chart_name: String) {
 
     for (language, values) in data.iter() {
         debug!("{:?}", values);
-        let color = generate_color();
+        let color = convert_color(&language.color);
 
         chart
             .draw_series(values.iter().map(|(x, y)| {
@@ -88,11 +87,8 @@ fn get_max_date(data: &ChronologicalLookup) -> Option<&NaiveDate> {
     data.values().flat_map(|btree| btree.keys()).max()
 }
 
-fn generate_color() -> RGBColor {
-    let mut rng = rand::thread_rng();
-    RGBColor(
-        rng.gen_range(0..255),
-        rng.gen_range(0..255),
-        rng.gen_range(0..255),
-    )
+fn convert_color(color: &str) -> RGBColor {
+    let color = &color[1..]; // hash symbol prefix
+    let decoded = <[u8; 3]>::from_hex(color).expect("Decoding failed");
+    RGBColor(decoded[0], decoded[1], decoded[2])
 }
