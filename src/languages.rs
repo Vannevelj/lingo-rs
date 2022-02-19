@@ -32,7 +32,6 @@ pub fn get_extensions() -> Vec<Language> {
     let javascript = Language::new("Javascript", vec!["js", "jsx"]);
     let swift = Language::new("Swift", vec!["swift"]);
     let objective_c = Language::new("Objective-C", vec!["h", "m"]);
-    let markdown = Language::new("Markdown", vec!["md"]);
     let shell = Language::new("Shell", vec!["sh", "zsh"]);
     let c_sharp = Language::new("C#", vec!["cs", "cake"]);
     let java = Language::new("Java", vec!["java"]);
@@ -45,14 +44,12 @@ pub fn get_extensions() -> Vec<Language> {
     let html = Language::new("HTML", vec!["html", "htm", "xhtml"]);
     let css = Language::new("CSS", vec!["css", "sass", "scss"]);
     let sql = Language::new("SQL", vec!["sql"]);
-    let cucumber = Language::new("Cucumber", vec!["feature"]);
 
     vec![
         typescript,
         javascript,
         swift,
         objective_c,
-        markdown,
         shell,
         c_sharp,
         java,
@@ -65,6 +62,5 @@ pub fn get_extensions() -> Vec<Language> {
         html,
         css,
         sql,
-        cucumber,
     ]
 }
