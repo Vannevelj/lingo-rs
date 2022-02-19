@@ -10,7 +10,7 @@ pub struct Options {
     #[structopt(short, long)]
     pub start: String,
 
-    /// Start date from which to analyse
+    /// Last date to use for analysis
     #[structopt(short, long)]
     pub end: Option<String>,
 
