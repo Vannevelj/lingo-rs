@@ -52,7 +52,7 @@ pub fn get_extensions() -> Vec<Language> {
         javascript,
         swift,
         objective_c,
-        markdown,
+        // markdown,
         shell,
         c_sharp,
         java,
@@ -62,9 +62,9 @@ pub fn get_extensions() -> Vec<Language> {
         ruby,
         python,
         c,
-        html,
-        css,
+        // html,
+        // css,
         sql,
-        cucumber,
+        // cucumber,
     ]
 }

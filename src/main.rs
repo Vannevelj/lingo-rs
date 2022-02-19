@@ -2,6 +2,8 @@ use chrono::{Duration, NaiveDate, Utc};
 use languages::{get_extensions, Language};
 use lazy_static::lazy_static;
 use log::{debug, error, info};
+use tempdir::TempDir;
+use fs_extra::dir::{copy, CopyOptions};
 
 use core::time;
 use std::{
@@ -52,21 +54,26 @@ fn main() {
         end = NaiveDate::parse_from_str(d.as_str(), date_format).expect("Failed to parse end date");
     }
 
-    reset_repo(&args.branch, &args.path);
+    let temp_dir = TempDir::new("lingo-rs").expect("Failed to create temporary directory");
+    let folder_name = &args.path.components().last().expect("Invalid folder name");
+    copy(&args.path, &temp_dir, &CopyOptions::new()).expect("Failed to copy folder");
+    info!("Created temporary directory at {:?}", temp_dir);
+    let temp_dir = temp_dir.path().join(folder_name);
+    info!("Created temporary directory at {:?}", temp_dir);
+    
+    reset_repo(&args.branch, &temp_dir);
 
     while start < end {
-        info!("Evaluating {}", start);
-        checkout_date(&start, &args.branch, &args.path);
+        // info!("Evaluating {}", start);
+        checkout_date(&start, &args.branch, &temp_dir);
 
         let mut usage_by_type: LanguageLookup = BTreeMap::new();
 
-        traverse_path(&args.path, &mut usage_by_type, 0);
+        traverse_path(&temp_dir, &mut usage_by_type, 0);
         distribution_by_date.insert(start, usage_by_type);
 
         start = start.add(Duration::days(1));
     }
-
-    reset_repo(&args.branch, &args.path);
 
     let mapped_data = rollup_data(distribution_by_date);
     create_graph(&mapped_data, args.name);
@@ -212,7 +219,7 @@ fn checkout_date(date: &NaiveDate, branch: &str, path: &Path) {
     let mut child = Command::new("git")
         .args(["checkout", commit_hash])
         .stdout(Stdio::null())
-        .stderr(Stdio::null())
+        // .stderr(Stdio::null())
         .current_dir(&path)
         .spawn()
         .expect("Failed to checkout date");
