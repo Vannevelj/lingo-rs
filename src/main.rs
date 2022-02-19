@@ -111,7 +111,7 @@ fn traverse_path(path: &Path, lookup: &mut LanguageLookup, tries: u8) {
 
                 let filesize = metadata.len();
                 if let Some(language) = extract_filetype(path) {
-                    let total = lookup.entry(language).or_insert(0);
+                    let total = lookup.entry(language.clone()).or_insert(0);
                     *total += filesize;
                 }
             } else if !should_skip_path(path) {
@@ -138,14 +138,14 @@ fn traverse_path(path: &Path, lookup: &mut LanguageLookup, tries: u8) {
     }
 }
 
-fn extract_filetype(path: &Path) -> Option<Language> {
+fn extract_filetype(path: &Path) -> Option<&Language> {
     // figure out which language a file is
     let current_path_extension = path.extension()?.to_str()?.to_string();
     if let Some(language) = EXTENSIONS
         .iter()
         .find(|x| x.extensions.contains(&current_path_extension))
     {
-        return Some(language.clone());
+        return Some(language);
     }
 
     None
