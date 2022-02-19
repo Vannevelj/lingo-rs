@@ -33,6 +33,18 @@ type ChronologicalLookup = BTreeMap<Language, BTreeMap<NaiveDate, Prevalence>>;
 
 lazy_static! {
     static ref EXTENSIONS: Vec<Language> = get_extensions();
+    static ref PATHS_TO_SKIP: Vec<&'static str> = vec![
+        "node_modules",
+        "build",
+        "target",
+        "bin",
+        "obj",
+        "__generated__",
+        "generated",
+        "Pods",
+        ".git",
+        "Resources",
+    ];
 }
 
 fn main() {
@@ -140,20 +152,8 @@ fn extract_filetype(path: &Path) -> Option<Language> {
 }
 
 fn should_skip_path(path: &Path) -> bool {
-    let to_skip = vec![
-        "node_modules",
-        "build",
-        "target",
-        "bin",
-        "obj",
-        "__generated__",
-        "generated",
-        "Pods",
-        ".git",
-        "Resources",
-    ];
     if let Some(path) = path.as_os_str().to_str() {
-        let should_skip = to_skip
+        let should_skip = PATHS_TO_SKIP
             .iter()
             .any(|pattern| path.contains(&format!("{}{}", pattern, MAIN_SEPARATOR)));
         if should_skip {
